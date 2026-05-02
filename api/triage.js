@@ -36,12 +36,16 @@ export default async function handler(request, response) {
           {
             role: "user",
             content: `Create a structured emergency triage profile from this intake.
+Intake mode: ${payload.intakeMode || "self"}
 Selected symbols: ${payload.selectedLabels?.join(", ") || "none"}
 Needs inferred from symbols: ${payload.selectedNeeds?.join(", ") || "none"}
 Voice input: ${payload.voiceInput || "none"}
 Text fallback: ${payload.textInput || "none"}
+Helper/bystander observation: ${payload.helperDescription || "none"}
 Location: ${location}
 Saved pre-disaster profile: ${payload.savedProfile ? JSON.stringify(payload.savedProfile) : "none"}
+
+If intake mode is helper, infer the affected person's urgency, needs, disability/access needs, communication method, and medical dependencies from the helper observation. Do not assume the helper is the person needing help.
 
 Return JSON with these keys:
 name, age, urgency ("critical" | "high" | "medium"), location, needs array, communicationMethod, medicalDependencies array, responderGuidance, cascadeOrder array using neighbor/volunteer/emergency/911, disabilities array, doNotDo array, approachSteps array, transcript.`,

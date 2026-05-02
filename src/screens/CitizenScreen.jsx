@@ -15,18 +15,18 @@ const symbolTiles = [
   { id: "vision", emoji: "👁️", label: "Vision impairment", need: "Guided navigation" },
 ]
 
-function fallbackProfile({ selectedLabels, selectedNeeds, textInput, voiceInput, location, savedProfile }) {
-  const combined = `${selectedLabels.join(", ")} ${textInput} ${voiceInput}`.toLowerCase()
+function fallbackProfile({ selectedLabels, selectedNeeds, textInput, voiceInput, location, savedProfile, intakeMode, helperDescription }) {
+  const combined = `${selectedLabels.join(", ")} ${textInput} ${voiceInput} ${helperDescription || ""}`.toLowerCase()
   const critical = combined.includes("breathe") || combined.includes("oxygen") || combined.includes("device")
 
   return {
-    name: savedProfile?.name || "Maya Rodriguez",
+    name: intakeMode === "helper" ? "Unknown person needing assistance" : savedProfile?.name || "Maya Rodriguez",
     age: 29,
     urgency: critical ? "critical" : "high",
     location: location
       ? `GPS ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`
       : "Location pending, last known residence on file",
-    needs: [...new Set(selectedNeeds.length ? selectedNeeds : ["Emergency welfare check"])],
+    needs: [...new Set(selectedNeeds.length ? selectedNeeds : inferHelperNeeds(combined))],
     communicationMethod: savedProfile?.communicationMethod || (combined.includes("non-verbal")
       ? "Use large written yes/no prompts and AAC choices. Do not require spoken answers."
       : "Speak calmly, ask one question at a time, and confirm understanding before moving."),
@@ -54,9 +54,22 @@ function fallbackProfile({ selectedLabels, selectedNeeds, textInput, voiceInput,
       "Collect medication, charger, mobility device, and communication tools.",
       "Evacuate through accessible route or request lift-trained support.",
     ],
-    transcript: `Symbols: ${selectedLabels.join(", ") || "none"} | Voice: ${voiceInput || "none"} | Text: ${textInput || "none"}`,
+    transcript: intakeMode === "helper"
+      ? `Helper observation: ${helperDescription || "none"}`
+      : `Symbols: ${selectedLabels.join(", ") || "none"} | Voice: ${voiceInput || "none"} | Text: ${textInput || "none"}`,
     generatedBy: "local fallback",
   }
+}
+
+function inferHelperNeeds(text) {
+  const needs = []
+  if (text.includes("unconscious") || text.includes("passed out") || text.includes("not responding")) needs.push("Unresponsive person")
+  if (text.includes("breath") || text.includes("oxygen") || text.includes("ventilator")) needs.push("Respiratory support")
+  if (text.includes("wheelchair") || text.includes("paralyzed") || text.includes("cannot move")) needs.push("Mobility assistance")
+  if (text.includes("device") || text.includes("battery") || text.includes("power") || text.includes("charger")) needs.push("Device power continuity")
+  if (text.includes("medication") || text.includes("insulin") || text.includes("seizure")) needs.push("Medication access")
+  if (text.includes("deaf") || text.includes("nonverbal") || text.includes("non-verbal") || text.includes("blind")) needs.push("Accessible communication")
+  return needs.length ? needs : ["Bystander welfare check", "Responder assessment needed"]
 }
 
 async function generateProfileWithOpenAI(payload) {
@@ -76,9 +89,11 @@ async function generateProfileWithOpenAI(payload) {
 }
 
 export default function CitizenScreen({ setProfile, setRole }) {
+  const [intakeMode, setIntakeMode] = useState("self")
   const [selected, setSelected] = useState(["nonverbal", "cant_move", "device", "alone"])
   const [voiceInput, setVoiceInput] = useState("")
   const [textInput, setTextInput] = useState("Power is out. I am on the second floor and cannot self-evacuate.")
+  const [helperDescription, setHelperDescription] = useState("I found someone in a power wheelchair near the elevator. They are awake but cannot speak clearly. Their chair battery light is blinking red.")
   const [location, setLocation] = useState(null)
   const [listening, setListening] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -144,7 +159,7 @@ export default function CitizenScreen({ setProfile, setRole }) {
   }
 
   useEffect(() => {
-    if (!switchAccessMode || confirmed) {
+    if (!switchAccessMode || confirmed || intakeMode === "helper") {
       return undefined
     }
 
@@ -173,7 +188,7 @@ export default function CitizenScreen({ setProfile, setRole }) {
 
     window.addEventListener("keydown", handleSwitchKey)
     return () => window.removeEventListener("keydown", handleSwitchKey)
-  }, [confirmed, highlightedTileIndex, switchAccessMode])
+  }, [confirmed, highlightedTileIndex, intakeMode, switchAccessMode])
 
   function startVoiceInput() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -211,10 +226,12 @@ export default function CitizenScreen({ setProfile, setRole }) {
     setLoading(true)
     setApiNote("")
     const payload = {
-      selectedLabels: selectedTiles.map((tile) => tile.label),
-      selectedNeeds: selectedTiles.map((tile) => tile.need),
+      intakeMode,
+      selectedLabels: intakeMode === "helper" ? [] : selectedTiles.map((tile) => tile.label),
+      selectedNeeds: intakeMode === "helper" ? [] : selectedTiles.map((tile) => tile.need),
       voiceInput,
-      textInput,
+      textInput: intakeMode === "helper" ? "" : textInput,
+      helperDescription: intakeMode === "helper" ? helperDescription : "",
       location,
       savedProfile: savedCitizenProfile,
     }
@@ -315,9 +332,43 @@ export default function CitizenScreen({ setProfile, setRole }) {
         </div>
       </section>
 
+      <section aria-label="Choose who needs help" style={styles.modeToggle}>
+        <button
+          aria-label="I need help mode"
+          aria-pressed={intakeMode === "self"}
+          onClick={() => setIntakeMode("self")}
+          style={{
+            ...styles.modeButton,
+            background: intakeMode === "self" ? "rgba(127, 29, 29, 0.62)" : "rgba(15, 23, 42, 0.76)",
+            borderColor: intakeMode === "self" ? "#ef4444" : "rgba(248, 250, 252, 0.14)",
+            color: intakeMode === "self" ? "#fee2e2" : "#cbd5e1",
+          }}
+          type="button"
+        >
+          I need help
+        </button>
+        <button
+          aria-label="I am helping someone else mode"
+          aria-pressed={intakeMode === "helper"}
+          onClick={() => {
+            setIntakeMode("helper")
+            setSwitchAccessMode(false)
+          }}
+          style={{
+            ...styles.modeButton,
+            background: intakeMode === "helper" ? "rgba(12, 74, 110, 0.62)" : "rgba(15, 23, 42, 0.76)",
+            borderColor: intakeMode === "helper" ? "#38bdf8" : "rgba(248, 250, 252, 0.14)",
+            color: intakeMode === "helper" ? "#bae6fd" : "#cbd5e1",
+          }}
+          type="button"
+        >
+          I am helping someone else
+        </button>
+      </section>
+
       <section style={styles.layout}>
         <div aria-describedby="citizen-intake-description" aria-labelledby="symbol-board-title" role="region" style={styles.panel}>
-          {savedCitizenProfile && (
+          {intakeMode === "self" && savedCitizenProfile && (
             <section aria-label="Saved emergency profile available" style={styles.savedProfileCallout}>
               <div>
                 <p style={styles.savedProfileLabel}>Saved profile found</p>
@@ -337,45 +388,69 @@ export default function CitizenScreen({ setProfile, setRole }) {
               </button>
             </section>
           )}
-          <h2 id="symbol-board-title" style={styles.sectionTitle}>Tap-able symbol board</h2>
-          <div
-            aria-label="Emergency need symbol tiles. Each tile can be selected or deselected."
-            role="group"
-            style={styles.symbolGrid}
-          >
-            {symbolTiles.map((tile, index) => {
-              const active = selected.includes(tile.id)
-              const highlighted = switchAccessMode && highlightedTileIndex === index
-              return (
-                <button
-                  aria-current={highlighted ? "true" : undefined}
-                  aria-label={`${tile.label}. Need type: ${tile.need}. ${active ? "Selected" : "Not selected"}${highlighted ? ". Current Switch Access scan target" : ""}.`}
-                  aria-pressed={active}
-                  key={tile.id}
-                  onClick={() => toggleTile(tile.id)}
-                  style={{
-                    ...styles.symbolTile,
-                    borderColor: highlighted ? "#facc15" : active ? "#ef4444" : "rgba(248, 250, 252, 0.14)",
-                    background: active ? "rgba(127, 29, 29, 0.58)" : "rgba(15, 23, 42, 0.74)",
-                    boxShadow: highlighted
-                      ? "0 0 0 4px rgba(250, 204, 21, 0.28), 0 0 42px rgba(250, 204, 21, 0.7)"
-                      : active
-                        ? "0 0 28px rgba(239, 68, 68, 0.25)"
-                        : "none",
-                    transform: highlighted ? "scale(1.03)" : "scale(1)",
-                  }}
-                  type="button"
-                >
-                  <span aria-hidden="true" style={styles.emoji}>{tile.emoji}</span>
-                  <span>{tile.label}</span>
-                </button>
-              )
-            })}
-          </div>
-          {switchAccessMode && (
-            <p aria-live="polite" id="switch-access-instructions" style={styles.switchHint}>
-              Switch Access Mode: press Space to scan tiles. Press Enter to select the highlighted tile.
-            </p>
+          {intakeMode === "self" ? (
+            <>
+              <h2 id="symbol-board-title" style={styles.sectionTitle}>Tap-able symbol board</h2>
+              <div
+                aria-label="Emergency need symbol tiles. Each tile can be selected or deselected."
+                role="group"
+                style={styles.symbolGrid}
+              >
+                {symbolTiles.map((tile, index) => {
+                  const active = selected.includes(tile.id)
+                  const highlighted = switchAccessMode && highlightedTileIndex === index
+                  return (
+                    <button
+                      aria-current={highlighted ? "true" : undefined}
+                      aria-label={`${tile.label}. Need type: ${tile.need}. ${active ? "Selected" : "Not selected"}${highlighted ? ". Current Switch Access scan target" : ""}.`}
+                      aria-pressed={active}
+                      key={tile.id}
+                      onClick={() => toggleTile(tile.id)}
+                      style={{
+                        ...styles.symbolTile,
+                        borderColor: highlighted ? "#facc15" : active ? "#ef4444" : "rgba(248, 250, 252, 0.14)",
+                        background: active ? "rgba(127, 29, 29, 0.58)" : "rgba(15, 23, 42, 0.74)",
+                        boxShadow: highlighted
+                          ? "0 0 0 4px rgba(250, 204, 21, 0.28), 0 0 42px rgba(250, 204, 21, 0.7)"
+                          : active
+                            ? "0 0 28px rgba(239, 68, 68, 0.25)"
+                            : "none",
+                        transform: highlighted ? "scale(1.03)" : "scale(1)",
+                      }}
+                      type="button"
+                    >
+                      <span aria-hidden="true" style={styles.emoji}>{tile.emoji}</span>
+                      <span>{tile.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              {switchAccessMode && (
+                <p aria-live="polite" id="switch-access-instructions" style={styles.switchHint}>
+                  Switch Access Mode: press Space to scan tiles. Press Enter to select the highlighted tile.
+                </p>
+              )}
+            </>
+          ) : (
+            <section aria-labelledby="helper-observation-title" style={styles.helperPanel}>
+              <p style={styles.savedProfileLabel}>Proxy emergency intake</p>
+              <h2 id="helper-observation-title" style={styles.sectionTitle}>Describe what you observe</h2>
+              <p style={styles.helperText}>
+                Tell ARIA what the person looks like, what they are saying or unable to say, what
+                devices are nearby, and what danger is present.
+              </p>
+              <label htmlFor="helper-observation" style={styles.textLabel}>
+                <span style={styles.labelText}>Helper observation</span>
+                <textarea
+                  aria-label="Describe the affected person's condition and observed needs"
+                  id="helper-observation"
+                  onChange={(event) => setHelperDescription(event.target.value)}
+                  placeholder="Example: Person is in a wheelchair, cannot move, pointing at oxygen tank, water entering room..."
+                  style={{ ...styles.textarea, minHeight: 260 }}
+                  value={helperDescription}
+                />
+              </label>
+            </section>
           )}
         </div>
 
@@ -466,6 +541,26 @@ const styles = {
     justifyContent: "space-between",
     gap: 18,
     margin: "26px 0",
+  },
+  modeToggle: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+    gap: 12,
+    margin: "0 0 18px",
+    padding: 8,
+    border: "1px solid rgba(248, 250, 252, 0.12)",
+    borderRadius: 16,
+    background: "rgba(2, 6, 23, 0.64)",
+  },
+  modeButton: {
+    minHeight: 64,
+    padding: "14px 16px",
+    border: "1px solid rgba(248, 250, 252, 0.14)",
+    borderRadius: 12,
+    cursor: "pointer",
+    fontSize: 18,
+    fontWeight: 950,
+    font: "inherit",
   },
   kicker: {
     margin: "0 0 8px",
@@ -578,6 +673,16 @@ const styles = {
     fontWeight: 950,
     boxShadow: "0 0 36px rgba(239, 68, 68, 0.45)",
     whiteSpace: "nowrap",
+  },
+  helperPanel: {
+    display: "grid",
+    gap: 14,
+  },
+  helperText: {
+    margin: 0,
+    color: "#cbd5e1",
+    fontSize: 18,
+    lineHeight: 1.5,
   },
   sectionTitle: {
     margin: "0 0 16px",
