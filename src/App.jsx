@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
-import { Radio, ShieldCheck, Siren, UsersRound } from "lucide-react"
+import { ClipboardList, Radio, ShieldCheck, Siren, UsersRound } from "lucide-react"
 import CitizenScreen from "./screens/CitizenScreen"
 import CascadeScreen from "./screens/CascadeScreen"
+import ProfileSetup from "./screens/ProfileSetup"
 import ResponderScreen from "./screens/ResponderScreen"
 
 const initialProfile = {
@@ -26,6 +27,14 @@ const initialProfile = {
 }
 
 const roleCards = [
+  {
+    id: "profile",
+    title: "Set Up Profile",
+    subtitle: "Save disability and contact details before disaster",
+    color: "#38bdf8",
+    glow: "rgba(56, 189, 248, 0.52)",
+    icon: ClipboardList,
+  },
   {
     id: "citizen",
     title: "I Need Help",
@@ -78,6 +87,10 @@ export default function App() {
 
   if (role === "citizen") {
     return <CitizenScreen profile={profile} setProfile={setProfile} setRole={setRole} />
+  }
+
+  if (role === "profile") {
+    return <ProfileSetup setRole={setRole} />
   }
 
   if (role === "cascade") {

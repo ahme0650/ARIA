@@ -41,6 +41,7 @@ Needs inferred from symbols: ${payload.selectedNeeds?.join(", ") || "none"}
 Voice input: ${payload.voiceInput || "none"}
 Text fallback: ${payload.textInput || "none"}
 Location: ${location}
+Saved pre-disaster profile: ${payload.savedProfile ? JSON.stringify(payload.savedProfile) : "none"}
 
 Return JSON with these keys:
 name, age, urgency ("critical" | "high" | "medium"), location, needs array, communicationMethod, medicalDependencies array, responderGuidance, cascadeOrder array using neighbor/volunteer/emergency/911, disabilities array, doNotDo array, approachSteps array, transcript.`,

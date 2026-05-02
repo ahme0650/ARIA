@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { ArrowLeft, CheckCircle2, LocateFixed, Mic, Send, ShieldAlert, Type } from "lucide-react"
+import { ArrowLeft, CheckCircle2, LocateFixed, Mic, Send, ShieldAlert, UserCheck, Type } from "lucide-react"
+
+const savedProfileKey = "aria-saved-citizen-profile"
 
 const symbolTiles = [
   { id: "cant_breathe", emoji: "🫁", label: "Can't breathe", need: "Respiratory distress" },
@@ -13,30 +15,34 @@ const symbolTiles = [
   { id: "vision", emoji: "👁️", label: "Vision impairment", need: "Guided navigation" },
 ]
 
-function fallbackProfile({ selectedLabels, selectedNeeds, textInput, voiceInput, location }) {
+function fallbackProfile({ selectedLabels, selectedNeeds, textInput, voiceInput, location, savedProfile }) {
   const combined = `${selectedLabels.join(", ")} ${textInput} ${voiceInput}`.toLowerCase()
   const critical = combined.includes("breathe") || combined.includes("oxygen") || combined.includes("device")
 
   return {
-    name: "Maya Rodriguez",
+    name: savedProfile?.name || "Maya Rodriguez",
     age: 29,
     urgency: critical ? "critical" : "high",
     location: location
       ? `GPS ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`
       : "Location pending, last known residence on file",
     needs: [...new Set(selectedNeeds.length ? selectedNeeds : ["Emergency welfare check"])],
-    communicationMethod: combined.includes("non-verbal")
+    communicationMethod: savedProfile?.communicationMethod || (combined.includes("non-verbal")
       ? "Use large written yes/no prompts and AAC choices. Do not require spoken answers."
-      : "Speak calmly, ask one question at a time, and confirm understanding before moving.",
-    medicalDependencies: combined.includes("device")
+      : "Speak calmly, ask one question at a time, and confirm understanding before moving."),
+    medicalDependencies: savedProfile?.medicalDevices
+      ? savedProfile.medicalDevices.split(/[;,]/).map((item) => item.trim()).filter(Boolean)
+      : combined.includes("device")
       ? ["Powered mobility or medical device", "Backup battery or generator access"]
       : ["Medication and mobility aids should remain with resident"],
     responderGuidance:
       "Approach from the front, identify yourself, and explain each step before touch or movement. Keep the resident with essential devices, medication, chargers, and communication aids.",
     cascadeOrder: critical ? ["neighbor", "emergency", "volunteer", "911"] : ["neighbor", "volunteer", "emergency", "911"],
-    disabilities: selectedLabels.filter((label) =>
-      ["Deaf", "Non-verbal", "Vision impairment", "Can't move"].includes(label),
-    ),
+    disabilities: savedProfile?.primaryDisability
+      ? [savedProfile.primaryDisability]
+      : selectedLabels.filter((label) =>
+        ["Deaf", "Non-verbal", "Vision impairment", "Can't move"].includes(label),
+      ),
     doNotDo: [
       "Do not separate the resident from assistive technology.",
       "Do not assume speech is required for consent.",
@@ -80,6 +86,10 @@ export default function CitizenScreen({ setProfile, setRole }) {
   const [apiNote, setApiNote] = useState("")
   const [switchAccessMode, setSwitchAccessMode] = useState(false)
   const [highlightedTileIndex, setHighlightedTileIndex] = useState(0)
+  const [savedCitizenProfile] = useState(() => {
+    const saved = localStorage.getItem(savedProfileKey)
+    return saved ? JSON.parse(saved) : null
+  })
   const recognitionRef = useRef(null)
 
   const selectedTiles = useMemo(
@@ -91,6 +101,46 @@ export default function CitizenScreen({ setProfile, setRole }) {
     setSelected((current) =>
       current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
     )
+  }
+
+  function inferTilesFromSavedProfile(savedProfile) {
+    const profileText = [
+      savedProfile.primaryDisability,
+      savedProfile.medicalDevices,
+      savedProfile.communicationMethod,
+      savedProfile.medicationNotes,
+      savedProfile.evacuationNotes,
+    ].join(" ").toLowerCase()
+
+    const inferred = []
+    if (profileText.includes("breath") || profileText.includes("oxygen") || profileText.includes("ventilator")) inferred.push("cant_breathe")
+    if (profileText.includes("wheelchair") || profileText.includes("paraly") || profileText.includes("mobility") || profileText.includes("stairs")) inferred.push("cant_move")
+    if (profileText.includes("medication") || profileText.includes("insulin") || profileText.includes("seizure")) inferred.push("need_meds")
+    if (profileText.includes("power") || profileText.includes("device") || profileText.includes("charger") || profileText.includes("battery")) inferred.push("device")
+    if (profileText.includes("deaf") || profileText.includes("hard of hearing") || profileText.includes("asl")) inferred.push("deaf")
+    if (profileText.includes("non-speaking") || profileText.includes("nonverbal") || profileText.includes("non-verbal") || profileText.includes("aac")) inferred.push("nonverbal")
+    if (profileText.includes("vision") || profileText.includes("blind") || profileText.includes("low vision")) inferred.push("vision")
+    return [...new Set(inferred.length ? inferred : ["alone"])]
+  }
+
+  function useSavedProfile() {
+    if (!savedCitizenProfile) return
+    const inferredTileIds = inferTilesFromSavedProfile(savedCitizenProfile)
+    const savedText = [
+      savedCitizenProfile.name ? `Saved profile for ${savedCitizenProfile.name}.` : "",
+      savedCitizenProfile.primaryDisability ? `Primary disability: ${savedCitizenProfile.primaryDisability}.` : "",
+      savedCitizenProfile.medicalDevices ? `Medical devices: ${savedCitizenProfile.medicalDevices}.` : "",
+      savedCitizenProfile.communicationMethod ? `Preferred communication: ${savedCitizenProfile.communicationMethod}.` : "",
+      savedCitizenProfile.medicationNotes ? `Medication notes: ${savedCitizenProfile.medicationNotes}.` : "",
+      savedCitizenProfile.evacuationNotes ? `Evacuation notes: ${savedCitizenProfile.evacuationNotes}.` : "",
+      savedCitizenProfile.emergencyContacts ? `Emergency contacts: ${savedCitizenProfile.emergencyContacts}.` : "",
+    ]
+      .filter(Boolean)
+      .join(" ")
+
+    setSelected(inferredTileIds)
+    setTextInput(savedText)
+    setApiNote("Saved emergency profile loaded from this device. Review or send immediately.")
   }
 
   useEffect(() => {
@@ -166,6 +216,7 @@ export default function CitizenScreen({ setProfile, setRole }) {
       voiceInput,
       textInput,
       location,
+      savedProfile: savedCitizenProfile,
     }
 
     try {
@@ -266,6 +317,26 @@ export default function CitizenScreen({ setProfile, setRole }) {
 
       <section style={styles.layout}>
         <div aria-describedby="citizen-intake-description" aria-labelledby="symbol-board-title" role="region" style={styles.panel}>
+          {savedCitizenProfile && (
+            <section aria-label="Saved emergency profile available" style={styles.savedProfileCallout}>
+              <div>
+                <p style={styles.savedProfileLabel}>Saved profile found</p>
+                <h2 style={styles.savedProfileTitle}>{savedCitizenProfile.name || "Emergency profile"}</h2>
+                <p style={styles.savedProfileText}>
+                  Load disability, device, communication, and emergency contact details with one tap.
+                </p>
+              </div>
+              <button
+                aria-label="Use my saved profile to pre-fill this emergency alert"
+                onClick={useSavedProfile}
+                style={styles.savedProfileButton}
+                type="button"
+              >
+                <UserCheck aria-hidden="true" size={26} />
+                Use My Saved Profile
+              </button>
+            </section>
+          )}
           <h2 id="symbol-board-title" style={styles.sectionTitle}>Tap-able symbol board</h2>
           <div
             aria-label="Emergency need symbol tiles. Each tile can be selected or deselected."
@@ -460,6 +531,53 @@ const styles = {
     borderRadius: 16,
     background: "rgba(15, 23, 42, 0.68)",
     boxShadow: "0 24px 70px rgba(0, 0, 0, 0.34)",
+  },
+  savedProfileCallout: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr) auto",
+    gap: 18,
+    alignItems: "center",
+    marginBottom: 18,
+    padding: 18,
+    border: "1px solid rgba(56, 189, 248, 0.36)",
+    borderRadius: 14,
+    background: "linear-gradient(135deg, rgba(12, 74, 110, 0.42), rgba(127, 29, 29, 0.24))",
+    boxShadow: "0 0 42px rgba(56, 189, 248, 0.14)",
+  },
+  savedProfileLabel: {
+    margin: "0 0 5px",
+    color: "#7dd3fc",
+    fontSize: 12,
+    fontWeight: 950,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+  },
+  savedProfileTitle: {
+    margin: 0,
+    color: "#ffffff",
+    fontSize: 25,
+  },
+  savedProfileText: {
+    margin: "8px 0 0",
+    color: "#dbeafe",
+    lineHeight: 1.45,
+  },
+  savedProfileButton: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    minHeight: 76,
+    padding: "16px 22px",
+    border: "1px solid #ef4444",
+    borderRadius: 14,
+    background: "linear-gradient(135deg, #ef4444, #991b1b)",
+    color: "#ffffff",
+    cursor: "pointer",
+    fontSize: 20,
+    fontWeight: 950,
+    boxShadow: "0 0 36px rgba(239, 68, 68, 0.45)",
+    whiteSpace: "nowrap",
   },
   sectionTitle: {
     margin: "0 0 16px",
