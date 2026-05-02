@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { ArrowLeft, CheckCircle2, LocateFixed, Mic, Send, ShieldAlert, Type } from "lucide-react"
 
 const symbolTiles = [
@@ -78,6 +78,8 @@ export default function CitizenScreen({ setProfile, setRole }) {
   const [loading, setLoading] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
   const [apiNote, setApiNote] = useState("")
+  const [switchAccessMode, setSwitchAccessMode] = useState(false)
+  const [highlightedTileIndex, setHighlightedTileIndex] = useState(0)
   const recognitionRef = useRef(null)
 
   const selectedTiles = useMemo(
@@ -90,6 +92,38 @@ export default function CitizenScreen({ setProfile, setRole }) {
       current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
     )
   }
+
+  useEffect(() => {
+    if (!switchAccessMode || confirmed) {
+      return undefined
+    }
+
+    function handleSwitchKey(event) {
+      const targetTag = event.target?.tagName?.toLowerCase()
+      const isTypingField = ["input", "textarea", "select"].includes(targetTag)
+      if (isTypingField) {
+        return
+      }
+
+      if (event.code === "Space") {
+        event.preventDefault()
+        setHighlightedTileIndex((current) => (current + 1) % symbolTiles.length)
+      }
+
+      if (event.code === "Enter") {
+        event.preventDefault()
+        const highlightedId = symbolTiles[highlightedTileIndex].id
+        setSelected((current) =>
+          current.includes(highlightedId)
+            ? current.filter((item) => item !== highlightedId)
+            : [...current, highlightedId],
+        )
+      }
+    }
+
+    window.addEventListener("keydown", handleSwitchKey)
+    return () => window.removeEventListener("keydown", handleSwitchKey)
+  }, [confirmed, highlightedTileIndex, switchAccessMode])
 
   function startVoiceInput() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -190,9 +224,27 @@ export default function CitizenScreen({ setProfile, setRole }) {
             Use symbols, voice, text, or GPS. Large controls stay usable under stress.
           </p>
         </div>
-        <div style={styles.alertBadge}>
-          <ShieldAlert size={18} />
-          Accessible SOS channel
+        <div style={styles.headerActions}>
+          <button
+            aria-pressed={switchAccessMode}
+            onClick={() => {
+              setSwitchAccessMode((current) => !current)
+              setHighlightedTileIndex(0)
+            }}
+            style={{
+              ...styles.switchButton,
+              borderColor: switchAccessMode ? "#facc15" : "rgba(248, 250, 252, 0.14)",
+              boxShadow: switchAccessMode ? "0 0 30px rgba(250, 204, 21, 0.45)" : "none",
+              color: switchAccessMode ? "#fef08a" : "#e5e7eb",
+            }}
+            type="button"
+          >
+            Switch Access {switchAccessMode ? "On" : "Off"}
+          </button>
+          <div style={styles.alertBadge}>
+            <ShieldAlert size={18} />
+            Accessible SOS channel
+          </div>
         </div>
       </section>
 
@@ -202,15 +254,22 @@ export default function CitizenScreen({ setProfile, setRole }) {
           <div style={styles.symbolGrid}>
             {symbolTiles.map((tile) => {
               const active = selected.includes(tile.id)
+              const highlighted = switchAccessMode && highlightedTileIndex === symbolTiles.indexOf(tile)
               return (
                 <button
+                  aria-current={highlighted ? "true" : undefined}
                   key={tile.id}
                   onClick={() => toggleTile(tile.id)}
                   style={{
                     ...styles.symbolTile,
-                    borderColor: active ? "#ef4444" : "rgba(248, 250, 252, 0.14)",
+                    borderColor: highlighted ? "#facc15" : active ? "#ef4444" : "rgba(248, 250, 252, 0.14)",
                     background: active ? "rgba(127, 29, 29, 0.58)" : "rgba(15, 23, 42, 0.74)",
-                    boxShadow: active ? "0 0 28px rgba(239, 68, 68, 0.25)" : "none",
+                    boxShadow: highlighted
+                      ? "0 0 0 4px rgba(250, 204, 21, 0.28), 0 0 42px rgba(250, 204, 21, 0.7)"
+                      : active
+                        ? "0 0 28px rgba(239, 68, 68, 0.25)"
+                        : "none",
+                    transform: highlighted ? "scale(1.03)" : "scale(1)",
                   }}
                   type="button"
                 >
@@ -220,6 +279,11 @@ export default function CitizenScreen({ setProfile, setRole }) {
               )
             })}
           </div>
+          {switchAccessMode && (
+            <p style={styles.switchHint}>
+              Switch Access Mode: press Space to scan tiles. Press Enter to select the highlighted tile.
+            </p>
+          )}
         </div>
 
         <aside style={styles.sidePanel}>
@@ -326,6 +390,26 @@ const styles = {
     color: "#fecaca",
     fontWeight: 900,
   },
+  headerActions: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  switchButton: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 46,
+    padding: "10px 14px",
+    border: "1px solid rgba(248, 250, 252, 0.14)",
+    borderRadius: 999,
+    background: "rgba(15, 23, 42, 0.88)",
+    color: "#e5e7eb",
+    cursor: "pointer",
+    fontWeight: 950,
+  },
   layout: {
     display: "grid",
     gridTemplateColumns: "minmax(0, 1.5fr) minmax(320px, 0.7fr)",
@@ -360,6 +444,18 @@ const styles = {
     cursor: "pointer",
     fontSize: 19,
     fontWeight: 900,
+    transition: "transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease",
+  },
+  switchHint: {
+    margin: "16px 0 0",
+    padding: 14,
+    border: "1px solid rgba(250, 204, 21, 0.36)",
+    borderRadius: 12,
+    background: "rgba(113, 63, 18, 0.32)",
+    color: "#fef08a",
+    fontSize: 17,
+    fontWeight: 900,
+    lineHeight: 1.45,
   },
   emoji: {
     fontSize: 38,
