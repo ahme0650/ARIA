@@ -183,15 +183,20 @@ export default function CitizenScreen({ setProfile, setRole }) {
 
   if (confirmed) {
     return (
-      <main style={styles.page}>
-        <button style={styles.backButton} onClick={() => setRole("landing")} type="button">
-          <ArrowLeft size={18} />
+      <main aria-label="Citizen emergency confirmation" style={styles.page}>
+        <button
+          aria-label="Return to ARIA role selection"
+          style={styles.backButton}
+          onClick={() => setRole("landing")}
+          type="button"
+        >
+          <ArrowLeft aria-hidden="true" size={18} />
           Role select
         </button>
-        <section style={styles.confirmation}>
-          <CheckCircle2 size={70} color="#ef4444" />
+        <section aria-labelledby="citizen-confirm-title" role="status" style={styles.confirmation}>
+          <CheckCircle2 aria-hidden="true" size={70} color="#ef4444" />
           <p style={styles.kicker}>Emergency alert received</p>
-          <h1 style={styles.confirmTitle}>Your care network is being activated</h1>
+          <h1 id="citizen-confirm-title" style={styles.confirmTitle}>Your care network is being activated</h1>
           <p style={styles.confirmText}>
             ARIA has generated a disability-aware triage profile, queued your location, and prepared
             guidance for caregivers and responders.
@@ -201,31 +206,42 @@ export default function CitizenScreen({ setProfile, setRole }) {
             <div style={styles.confirmCard}>Caregiver cascade notified</div>
             <div style={styles.confirmCard}>Responder briefing prepared</div>
           </div>
-          <button style={styles.primaryButton} onClick={() => setRole("cascade")} type="button">
+          <button
+            aria-label="View activated care network"
+            style={styles.primaryButton}
+            onClick={() => setRole("cascade")}
+            type="button"
+          >
             View activated care network
           </button>
-          {apiNote && <p style={styles.apiNote}>{apiNote}</p>}
+          {apiNote && <p aria-live="polite" style={styles.apiNote}>{apiNote}</p>}
         </section>
       </main>
     )
   }
 
   return (
-    <main style={styles.page}>
-      <button style={styles.backButton} onClick={() => setRole("landing")} type="button">
-        <ArrowLeft size={18} />
+    <main aria-label="Citizen emergency intake" style={styles.page}>
+      <button
+        aria-label="Return to ARIA role selection"
+        style={styles.backButton}
+        onClick={() => setRole("landing")}
+        type="button"
+      >
+        <ArrowLeft aria-hidden="true" size={18} />
         Role select
       </button>
-      <section style={styles.header}>
+      <section aria-labelledby="citizen-intake-title" style={styles.header}>
         <div>
           <p style={styles.kicker}>Citizen emergency intake</p>
-          <h1 style={styles.title}>Tell ARIA what you need</h1>
-          <p style={styles.subtitle}>
+          <h1 id="citizen-intake-title" style={styles.title}>Tell ARIA what you need</h1>
+          <p id="citizen-intake-description" style={styles.subtitle}>
             Use symbols, voice, text, or GPS. Large controls stay usable under stress.
           </p>
         </div>
         <div style={styles.headerActions}>
           <button
+            aria-label={`Switch Access Mode is ${switchAccessMode ? "on" : "off"}. Press to turn it ${switchAccessMode ? "off" : "on"}. When on, press Space to scan symbol tiles and Enter to select.`}
             aria-pressed={switchAccessMode}
             onClick={() => {
               setSwitchAccessMode((current) => !current)
@@ -241,23 +257,29 @@ export default function CitizenScreen({ setProfile, setRole }) {
           >
             Switch Access {switchAccessMode ? "On" : "Off"}
           </button>
-          <div style={styles.alertBadge}>
-            <ShieldAlert size={18} />
+          <div aria-label="Accessible SOS channel is active" role="status" style={styles.alertBadge}>
+            <ShieldAlert aria-hidden="true" size={18} />
             Accessible SOS channel
           </div>
         </div>
       </section>
 
       <section style={styles.layout}>
-        <div style={styles.panel}>
-          <h2 style={styles.sectionTitle}>Tap-able symbol board</h2>
-          <div style={styles.symbolGrid}>
-            {symbolTiles.map((tile) => {
+        <div aria-describedby="citizen-intake-description" aria-labelledby="symbol-board-title" role="region" style={styles.panel}>
+          <h2 id="symbol-board-title" style={styles.sectionTitle}>Tap-able symbol board</h2>
+          <div
+            aria-label="Emergency need symbol tiles. Each tile can be selected or deselected."
+            role="group"
+            style={styles.symbolGrid}
+          >
+            {symbolTiles.map((tile, index) => {
               const active = selected.includes(tile.id)
-              const highlighted = switchAccessMode && highlightedTileIndex === symbolTiles.indexOf(tile)
+              const highlighted = switchAccessMode && highlightedTileIndex === index
               return (
                 <button
                   aria-current={highlighted ? "true" : undefined}
+                  aria-label={`${tile.label}. Need type: ${tile.need}. ${active ? "Selected" : "Not selected"}${highlighted ? ". Current Switch Access scan target" : ""}.`}
+                  aria-pressed={active}
                   key={tile.id}
                   onClick={() => toggleTile(tile.id)}
                   style={{
@@ -273,21 +295,23 @@ export default function CitizenScreen({ setProfile, setRole }) {
                   }}
                   type="button"
                 >
-                  <span style={styles.emoji}>{tile.emoji}</span>
+                  <span aria-hidden="true" style={styles.emoji}>{tile.emoji}</span>
                   <span>{tile.label}</span>
                 </button>
               )
             })}
           </div>
           {switchAccessMode && (
-            <p style={styles.switchHint}>
+            <p aria-live="polite" id="switch-access-instructions" style={styles.switchHint}>
               Switch Access Mode: press Space to scan tiles. Press Enter to select the highlighted tile.
             </p>
           )}
         </div>
 
-        <aside style={styles.sidePanel}>
+        <aside aria-label="Additional emergency input controls" style={styles.sidePanel}>
           <button
+            aria-label={listening ? "Voice input is listening. Speak your emergency situation now." : "Start voice input for emergency situation"}
+            aria-pressed={listening}
             style={{
               ...styles.inputButton,
               borderColor: listening ? "#ef4444" : "rgba(248, 250, 252, 0.14)",
@@ -295,33 +319,48 @@ export default function CitizenScreen({ setProfile, setRole }) {
             onClick={startVoiceInput}
             type="button"
           >
-            <Mic size={23} />
+            <Mic aria-hidden="true" size={23} />
             {listening ? "Listening..." : "Voice input"}
           </button>
-          {voiceInput && <p style={styles.captureText}>Captured: {voiceInput}</p>}
+          {voiceInput && <p aria-live="polite" style={styles.captureText}>Captured: {voiceInput}</p>}
 
-          <label style={styles.textLabel}>
+          <label htmlFor="citizen-text-fallback" style={styles.textLabel}>
             <span style={styles.labelText}>
-              <Type size={18} />
+              <Type aria-hidden="true" size={18} />
               Text fallback
             </span>
             <textarea
+              aria-label="Text fallback for emergency situation"
+              id="citizen-text-fallback"
               style={styles.textarea}
               onChange={(event) => setTextInput(event.target.value)}
               value={textInput}
             />
           </label>
 
-          <button style={styles.inputButton} onClick={shareLocation} type="button">
-            <LocateFixed size={23} />
+          <button
+            aria-label={location ? `Location shared. Latitude ${location.lat.toFixed(4)}, longitude ${location.lng.toFixed(4)}.` : "Share current location with ARIA"}
+            aria-pressed={Boolean(location)}
+            style={styles.inputButton}
+            onClick={shareLocation}
+            type="button"
+          >
+            <LocateFixed aria-hidden="true" size={23} />
             {location ? "Location shared" : "One-tap location share"}
           </button>
 
-          <button style={styles.emergencyButton} disabled={loading} onClick={submitAlert} type="button">
-            <Send size={24} />
+          <button
+            aria-label={loading ? "Generating triage profile. Emergency alert submission is in progress." : "Send emergency alert to ARIA"}
+            aria-busy={loading}
+            style={styles.emergencyButton}
+            disabled={loading}
+            onClick={submitAlert}
+            type="button"
+          >
+            <Send aria-hidden="true" size={24} />
             {loading ? "Generating triage..." : "Send emergency alert"}
           </button>
-          {apiNote && <p style={styles.apiNote}>{apiNote}</p>}
+          {apiNote && <p aria-live="polite" style={styles.apiNote}>{apiNote}</p>}
         </aside>
       </section>
     </main>
