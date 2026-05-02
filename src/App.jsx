@@ -4,6 +4,7 @@ import CitizenScreen from "./screens/CitizenScreen"
 import CascadeScreen from "./screens/CascadeScreen"
 import ProfileSetup from "./screens/ProfileSetup"
 import ResponderScreen from "./screens/ResponderScreen"
+import useIsMobile from "./useIsMobile"
 
 const initialProfile = {
   name: "Maya Rodriguez",
@@ -62,6 +63,7 @@ const roleCards = [
 ]
 
 export default function App() {
+  const isMobile = useIsMobile()
   const [role, setRole] = useState("landing")
   const [hoveredRole, setHoveredRole] = useState(null)
   const [pulseOn, setPulseOn] = useState(true)
@@ -106,9 +108,9 @@ export default function App() {
       style={{
         position: "relative",
         minHeight: "100svh",
-        overflow: "hidden",
-        padding: "clamp(22px, 5vw, 72px)",
-        paddingBottom: 94,
+        overflowX: "hidden",
+        padding: isMobile ? "18px 14px 22px" : "clamp(22px, 5vw, 72px)",
+        paddingBottom: isMobile ? "calc(22px + env(safe-area-inset-bottom))" : 94,
         background:
           "radial-gradient(circle at 50% 18%, rgba(185, 28, 28, 0.22), transparent 32%), radial-gradient(circle at 12% 78%, rgba(14, 165, 233, 0.11), transparent 25%), #0a0a0f",
         boxSizing: "border-box",
@@ -132,8 +134,9 @@ export default function App() {
           zIndex: 1,
           display: "grid",
           placeItems: "center",
-          minHeight: "48svh",
+          minHeight: isMobile ? "auto" : "48svh",
           textAlign: "center",
+          padding: isMobile ? "12px 0 22px" : 0,
         }}
       >
         <div>
@@ -142,17 +145,17 @@ export default function App() {
             style={{
               display: "inline-grid",
               placeItems: "center",
-              width: 118,
-              height: 118,
-              marginBottom: 24,
+              width: isMobile ? 82 : 118,
+              height: isMobile ? 82 : 118,
+              marginBottom: isMobile ? 14 : 24,
               border: "1px solid rgba(248, 250, 252, 0.22)",
-              borderRadius: 28,
+              borderRadius: isMobile ? 18 : 28,
               background:
                 "linear-gradient(145deg, rgba(248, 250, 252, 0.13), rgba(248, 250, 252, 0.03))",
               boxShadow:
                 "0 0 54px rgba(239, 68, 68, 0.26), inset 0 0 28px rgba(248, 250, 252, 0.06)",
               color: "#ffffff",
-              fontSize: 34,
+              fontSize: isMobile ? 24 : 34,
               fontWeight: 950,
               letterSpacing: 0,
             }}
@@ -163,7 +166,7 @@ export default function App() {
             style={{
               margin: 0,
               color: "#ffffff",
-              fontSize: "clamp(58px, 11vw, 138px)",
+              fontSize: isMobile ? "clamp(46px, 18vw, 68px)" : "clamp(58px, 11vw, 138px)",
               fontWeight: 950,
               letterSpacing: 0,
               lineHeight: 0.9,
@@ -177,7 +180,7 @@ export default function App() {
               margin: "18px auto 0",
               maxWidth: 720,
               color: "#dbeafe",
-              fontSize: "clamp(18px, 2.4vw, 28px)",
+              fontSize: isMobile ? 16 : "clamp(18px, 2.4vw, 28px)",
               fontWeight: 750,
               letterSpacing: 0,
             }}
@@ -189,7 +192,7 @@ export default function App() {
               display: "inline-flex",
               alignItems: "center",
               gap: 10,
-              marginTop: 24,
+              marginTop: isMobile ? 16 : 24,
               padding: "10px 16px",
               border: "1px solid rgba(239, 68, 68, 0.42)",
               borderRadius: 999,
@@ -199,6 +202,9 @@ export default function App() {
               fontWeight: 900,
               textTransform: "uppercase",
               letterSpacing: "0.1em",
+              maxWidth: "100%",
+              justifyContent: "center",
+              flexWrap: "wrap",
               boxShadow: pulseOn
                 ? "0 0 36px rgba(239, 68, 68, 0.64)"
                 : "0 0 12px rgba(239, 68, 68, 0.2)",
@@ -226,8 +232,8 @@ export default function App() {
           position: "relative",
           zIndex: 1,
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
-          gap: 20,
+          gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(230px, 1fr))",
+          gap: isMobile ? 12 : 20,
           width: "min(1040px, 100%)",
           margin: "0 auto",
         }}
@@ -242,10 +248,10 @@ export default function App() {
               onMouseEnter={() => setHoveredRole(card.id)}
               onMouseLeave={() => setHoveredRole(null)}
               style={{
-                minHeight: 230,
-                padding: 26,
+                minHeight: isMobile ? 132 : 230,
+                padding: isMobile ? 18 : 26,
                 border: `1px solid ${isHovered ? card.color : "rgba(148, 163, 184, 0.22)"}`,
-                borderRadius: 18,
+                borderRadius: 12,
                 background:
                   "linear-gradient(155deg, rgba(15, 23, 42, 0.92), rgba(10, 10, 15, 0.74))",
                 color: "#f8fafc",
@@ -254,7 +260,7 @@ export default function App() {
                 boxShadow: isHovered
                   ? `0 24px 64px ${card.glow}, inset 0 0 34px rgba(255,255,255,0.05)`
                   : "0 18px 44px rgba(0, 0, 0, 0.38)",
-                transform: isHovered ? "translateY(-10px)" : "translateY(0)",
+                transform: !isMobile && isHovered ? "translateY(-10px)" : "translateY(0)",
                 transition: "transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease",
                 font: "inherit",
               }}
@@ -264,21 +270,21 @@ export default function App() {
                 style={{
                   display: "inline-grid",
                   placeItems: "center",
-                  width: 56,
-                  height: 56,
-                  marginBottom: 36,
-                  borderRadius: 14,
+                  width: isMobile ? 44 : 56,
+                  height: isMobile ? 44 : 56,
+                  marginBottom: isMobile ? 14 : 36,
+                  borderRadius: 10,
                   background: `${card.color}20`,
                   color: card.color,
                   boxShadow: isHovered ? `0 0 28px ${card.glow}` : "none",
                 }}
               >
-                <Icon size={29} />
+                <Icon size={isMobile ? 23 : 29} />
               </div>
-              <h2 style={{ margin: "0 0 10px", color: "#ffffff", fontSize: 29, letterSpacing: 0 }}>
+              <h2 style={{ margin: "0 0 8px", color: "#ffffff", fontSize: isMobile ? 21 : 29, letterSpacing: 0 }}>
                 {card.title}
               </h2>
-              <p style={{ margin: 0, color: "#94a3b8", fontSize: 15, fontWeight: 750 }}>
+              <p style={{ margin: 0, color: "#94a3b8", fontSize: isMobile ? 14 : 15, fontWeight: 750, lineHeight: 1.35 }}>
                 {card.subtitle}
               </p>
             </button>
@@ -288,21 +294,23 @@ export default function App() {
 
       <footer
         style={{
-          position: "fixed",
+          position: isMobile ? "relative" : "fixed",
           left: 0,
           right: 0,
           bottom: 0,
           zIndex: 3,
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
-          gap: 16,
-          padding: "14px clamp(18px, 5vw, 44px)",
+          justifyContent: isMobile ? "center" : "space-between",
+          flexWrap: "wrap",
+          gap: isMobile ? 8 : 16,
+          marginTop: isMobile ? 18 : 0,
+          padding: isMobile ? "12px 10px" : "14px clamp(18px, 5vw, 44px)",
           borderTop: "1px solid rgba(148, 163, 184, 0.18)",
           background: "rgba(5, 5, 10, 0.9)",
           backdropFilter: "blur(18px)",
           color: "#cbd5e1",
-          fontSize: 13,
+          fontSize: isMobile ? 11 : 13,
           fontWeight: 800,
           boxSizing: "border-box",
         }}
@@ -319,7 +327,7 @@ export default function App() {
           />
           SYSTEM ONLINE
         </span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+        <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, textAlign: "center" }}>
           <Radio size={16} />
           ARIA OPS CENTER / SECURE LOCAL MODE
         </span>

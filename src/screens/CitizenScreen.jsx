@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ArrowLeft, CheckCircle2, LocateFixed, Mic, Send, ShieldAlert, UserCheck, Type } from "lucide-react"
+import useIsMobile from "../useIsMobile"
 
 const savedProfileKey = "aria-saved-citizen-profile"
 
@@ -89,6 +90,7 @@ async function generateProfileWithOpenAI(payload) {
 }
 
 export default function CitizenScreen({ setProfile, setRole }) {
+  const isMobile = useIsMobile()
   const [intakeMode, setIntakeMode] = useState("self")
   const [selected, setSelected] = useState(["nonverbal", "cant_move", "device", "alone"])
   const [voiceInput, setVoiceInput] = useState("")
@@ -251,7 +253,7 @@ export default function CitizenScreen({ setProfile, setRole }) {
 
   if (confirmed) {
     return (
-      <main aria-label="Citizen emergency confirmation" style={styles.page}>
+      <main aria-label="Citizen emergency confirmation" style={sx(styles.page, isMobile, mobileStyles.page)}>
         <button
           aria-label="Return to ARIA role selection"
           style={styles.backButton}
@@ -261,11 +263,11 @@ export default function CitizenScreen({ setProfile, setRole }) {
           <ArrowLeft aria-hidden="true" size={18} />
           Role select
         </button>
-        <section aria-labelledby="citizen-confirm-title" role="status" style={styles.confirmation}>
+        <section aria-labelledby="citizen-confirm-title" role="status" style={sx(styles.confirmation, isMobile, mobileStyles.confirmation)}>
           <CheckCircle2 aria-hidden="true" size={70} color="#ef4444" />
           <p style={styles.kicker}>Emergency alert received</p>
-          <h1 id="citizen-confirm-title" style={styles.confirmTitle}>Your care network is being activated</h1>
-          <p style={styles.confirmText}>
+          <h1 id="citizen-confirm-title" style={sx(styles.confirmTitle, isMobile, mobileStyles.confirmTitle)}>Your care network is being activated</h1>
+          <p style={sx(styles.confirmText, isMobile, mobileStyles.confirmText)}>
             ARIA has generated a disability-aware triage profile, queued your location, and prepared
             guidance for caregivers and responders.
           </p>
@@ -276,7 +278,7 @@ export default function CitizenScreen({ setProfile, setRole }) {
           </div>
           <button
             aria-label="View activated care network"
-            style={styles.primaryButton}
+            style={sx(styles.primaryButton, isMobile, mobileStyles.fullWidthButton)}
             onClick={() => setRole("cascade")}
             type="button"
           >
@@ -289,7 +291,7 @@ export default function CitizenScreen({ setProfile, setRole }) {
   }
 
   return (
-    <main aria-label="Citizen emergency intake" style={styles.page}>
+    <main aria-label="Citizen emergency intake" style={sx(styles.page, isMobile, mobileStyles.page)}>
       <button
         aria-label="Return to ARIA role selection"
         style={styles.backButton}
@@ -299,15 +301,15 @@ export default function CitizenScreen({ setProfile, setRole }) {
         <ArrowLeft aria-hidden="true" size={18} />
         Role select
       </button>
-      <section aria-labelledby="citizen-intake-title" style={styles.header}>
+      <section aria-labelledby="citizen-intake-title" style={sx(styles.header, isMobile, mobileStyles.header)}>
         <div>
           <p style={styles.kicker}>Citizen emergency intake</p>
-          <h1 id="citizen-intake-title" style={styles.title}>Tell ARIA what you need</h1>
-          <p id="citizen-intake-description" style={styles.subtitle}>
+          <h1 id="citizen-intake-title" style={sx(styles.title, isMobile, mobileStyles.title)}>Tell ARIA what you need</h1>
+          <p id="citizen-intake-description" style={sx(styles.subtitle, isMobile, mobileStyles.subtitle)}>
             Use symbols, voice, text, or GPS. Large controls stay usable under stress.
           </p>
         </div>
-        <div style={styles.headerActions}>
+        <div style={sx(styles.headerActions, isMobile, mobileStyles.headerActions)}>
           <button
             aria-label={`Switch Access Mode is ${switchAccessMode ? "on" : "off"}. Press to turn it ${switchAccessMode ? "off" : "on"}. When on, press Space to scan symbol tiles and Enter to select.`}
             aria-pressed={switchAccessMode}
@@ -317,6 +319,7 @@ export default function CitizenScreen({ setProfile, setRole }) {
             }}
             style={{
               ...styles.switchButton,
+              ...(isMobile ? mobileStyles.fullWidthButton : {}),
               borderColor: switchAccessMode ? "#facc15" : "rgba(248, 250, 252, 0.14)",
               boxShadow: switchAccessMode ? "0 0 30px rgba(250, 204, 21, 0.45)" : "none",
               color: switchAccessMode ? "#fef08a" : "#e5e7eb",
@@ -325,14 +328,18 @@ export default function CitizenScreen({ setProfile, setRole }) {
           >
             Switch Access {switchAccessMode ? "On" : "Off"}
           </button>
-          <div aria-label="Accessible SOS channel is active" role="status" style={styles.alertBadge}>
+          <div
+            aria-label="Accessible SOS channel is active"
+            role="status"
+            style={sx(styles.alertBadge, isMobile, mobileStyles.fullWidthStatus)}
+          >
             <ShieldAlert aria-hidden="true" size={18} />
             Accessible SOS channel
           </div>
         </div>
       </section>
 
-      <section aria-label="Choose who needs help" style={styles.modeToggle}>
+      <section aria-label="Choose who needs help" style={sx(styles.modeToggle, isMobile, mobileStyles.modeToggle)}>
         <button
           aria-label="I need help mode"
           aria-pressed={intakeMode === "self"}
@@ -366,10 +373,10 @@ export default function CitizenScreen({ setProfile, setRole }) {
         </button>
       </section>
 
-      <section style={styles.layout}>
-        <div aria-describedby="citizen-intake-description" aria-labelledby="symbol-board-title" role="region" style={styles.panel}>
+      <section style={sx(styles.layout, isMobile, mobileStyles.layout)}>
+        <div aria-describedby="citizen-intake-description" aria-labelledby="symbol-board-title" role="region" style={sx(styles.panel, isMobile, mobileStyles.panel)}>
           {intakeMode === "self" && savedCitizenProfile && (
-            <section aria-label="Saved emergency profile available" style={styles.savedProfileCallout}>
+            <section aria-label="Saved emergency profile available" style={sx(styles.savedProfileCallout, isMobile, mobileStyles.savedProfileCallout)}>
               <div>
                 <p style={styles.savedProfileLabel}>Saved profile found</p>
                 <h2 style={styles.savedProfileTitle}>{savedCitizenProfile.name || "Emergency profile"}</h2>
@@ -380,7 +387,7 @@ export default function CitizenScreen({ setProfile, setRole }) {
               <button
                 aria-label="Use my saved profile to pre-fill this emergency alert"
                 onClick={useSavedProfile}
-                style={styles.savedProfileButton}
+                style={sx(styles.savedProfileButton, isMobile, mobileStyles.fullWidthButton)}
                 type="button"
               >
                 <UserCheck aria-hidden="true" size={26} />
@@ -394,7 +401,7 @@ export default function CitizenScreen({ setProfile, setRole }) {
               <div
                 aria-label="Emergency need symbol tiles. Each tile can be selected or deselected."
                 role="group"
-                style={styles.symbolGrid}
+                style={sx(styles.symbolGrid, isMobile, mobileStyles.symbolGrid)}
               >
                 {symbolTiles.map((tile, index) => {
                   const active = selected.includes(tile.id)
@@ -408,6 +415,7 @@ export default function CitizenScreen({ setProfile, setRole }) {
                       onClick={() => toggleTile(tile.id)}
                       style={{
                         ...styles.symbolTile,
+                        ...(isMobile ? mobileStyles.symbolTile : {}),
                         borderColor: highlighted ? "#facc15" : active ? "#ef4444" : "rgba(248, 250, 252, 0.14)",
                         background: active ? "rgba(127, 29, 29, 0.58)" : "rgba(15, 23, 42, 0.74)",
                         boxShadow: highlighted
@@ -446,7 +454,7 @@ export default function CitizenScreen({ setProfile, setRole }) {
                   id="helper-observation"
                   onChange={(event) => setHelperDescription(event.target.value)}
                   placeholder="Example: Person is in a wheelchair, cannot move, pointing at oxygen tank, water entering room..."
-                  style={{ ...styles.textarea, minHeight: 260 }}
+                  style={{ ...styles.textarea, minHeight: isMobile ? 180 : 260 }}
                   value={helperDescription}
                 />
               </label>
@@ -454,12 +462,13 @@ export default function CitizenScreen({ setProfile, setRole }) {
           )}
         </div>
 
-        <aside aria-label="Additional emergency input controls" style={styles.sidePanel}>
+        <aside aria-label="Additional emergency input controls" style={sx(styles.sidePanel, isMobile, mobileStyles.sidePanel)}>
           <button
             aria-label={listening ? "Voice input is listening. Speak your emergency situation now." : "Start voice input for emergency situation"}
             aria-pressed={listening}
             style={{
               ...styles.inputButton,
+              ...(isMobile ? mobileStyles.fullWidthButton : {}),
               borderColor: listening ? "#ef4444" : "rgba(248, 250, 252, 0.14)",
             }}
             onClick={startVoiceInput}
@@ -487,7 +496,7 @@ export default function CitizenScreen({ setProfile, setRole }) {
           <button
             aria-label={location ? `Location shared. Latitude ${location.lat.toFixed(4)}, longitude ${location.lng.toFixed(4)}.` : "Share current location with ARIA"}
             aria-pressed={Boolean(location)}
-            style={styles.inputButton}
+            style={sx(styles.inputButton, isMobile, mobileStyles.fullWidthButton)}
             onClick={shareLocation}
             type="button"
           >
@@ -498,7 +507,7 @@ export default function CitizenScreen({ setProfile, setRole }) {
           <button
             aria-label={loading ? "Generating triage profile. Emergency alert submission is in progress." : "Send emergency alert to ARIA"}
             aria-busy={loading}
-            style={styles.emergencyButton}
+            style={sx(styles.emergencyButton, isMobile, mobileStyles.fullWidthButton)}
             disabled={loading}
             onClick={submitAlert}
             type="button"
@@ -844,5 +853,89 @@ const styles = {
     cursor: "pointer",
     fontSize: 16,
     fontWeight: 900,
+  },
+}
+
+function sx(base, isMobile, mobile) {
+  return isMobile ? { ...base, ...mobile } : base
+}
+
+const mobileStyles = {
+  page: {
+    padding: "16px 14px calc(22px + env(safe-area-inset-bottom))",
+    overflowX: "hidden",
+  },
+  header: {
+    display: "grid",
+    alignItems: "start",
+    gap: 14,
+    margin: "20px 0",
+  },
+  headerActions: {
+    display: "grid",
+    gridTemplateColumns: "1fr",
+    justifyContent: "stretch",
+    width: "100%",
+  },
+  title: {
+    fontSize: "clamp(34px, 11vw, 48px)",
+    lineHeight: 1.04,
+  },
+  subtitle: {
+    fontSize: 16,
+  },
+  modeToggle: {
+    gridTemplateColumns: "1fr",
+    padding: 6,
+    borderRadius: 12,
+  },
+  layout: {
+    gridTemplateColumns: "1fr",
+    gap: 14,
+  },
+  panel: {
+    padding: 16,
+    borderRadius: 12,
+  },
+  sidePanel: {
+    padding: 16,
+    borderRadius: 12,
+  },
+  savedProfileCallout: {
+    gridTemplateColumns: "1fr",
+    padding: 14,
+  },
+  symbolGrid: {
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: 10,
+  },
+  symbolTile: {
+    minHeight: 106,
+    padding: 10,
+    borderRadius: 12,
+    fontSize: 14,
+  },
+  fullWidthButton: {
+    width: "100%",
+    minHeight: 58,
+    whiteSpace: "normal",
+    textAlign: "center",
+  },
+  fullWidthStatus: {
+    width: "100%",
+    justifyContent: "center",
+    borderRadius: 12,
+    textAlign: "center",
+  },
+  confirmation: {
+    minHeight: "68svh",
+    padding: "18px 0",
+  },
+  confirmTitle: {
+    fontSize: "clamp(34px, 11vw, 50px)",
+    lineHeight: 1.04,
+  },
+  confirmText: {
+    fontSize: 16,
   },
 }

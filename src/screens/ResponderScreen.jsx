@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { ArrowLeft, Filter, Search, ShieldCheck, Siren } from "lucide-react"
+import useIsMobile from "../useIsMobile"
 
 function buildCases(profile) {
   return [
@@ -71,6 +72,7 @@ function buildCases(profile) {
 const urgencyRank = { critical: 0, high: 1, medium: 2 }
 
 export default function ResponderScreen({ profile, setRole }) {
+  const isMobile = useIsMobile()
   const [selectedId, setSelectedId] = useState("ARIA-2407")
   const [query, setQuery] = useState("")
   const [urgencyFilter, setUrgencyFilter] = useState("all")
@@ -88,16 +90,16 @@ export default function ResponderScreen({ profile, setRole }) {
   const selectedCase = cases.find((item) => item.id === selectedId) || visibleCases[0] || cases[0]
 
   return (
-    <main style={styles.page}>
+    <main style={sx(styles.page, isMobile, mobileStyles.page)}>
       <button style={styles.backButton} onClick={() => setRole("landing")} type="button">
         <ArrowLeft size={18} />
         Role select
       </button>
 
-      <header style={styles.header}>
+      <header style={sx(styles.header, isMobile, mobileStyles.header)}>
         <div>
           <p style={styles.kicker}>Responder command center</p>
-          <h1 style={styles.title}>Active accessibility-aware cases</h1>
+          <h1 style={sx(styles.title, isMobile, mobileStyles.title)}>Active accessibility-aware cases</h1>
         </div>
         <div style={styles.onlineBadge}>
           <ShieldCheck size={18} />
@@ -105,7 +107,7 @@ export default function ResponderScreen({ profile, setRole }) {
         </div>
       </header>
 
-      <section style={styles.toolbar}>
+      <section style={sx(styles.toolbar, isMobile, mobileStyles.toolbar)}>
         <label style={styles.searchBox}>
           <Search size={18} />
           <input
@@ -134,7 +136,7 @@ export default function ResponderScreen({ profile, setRole }) {
         </select>
       </section>
 
-      <section style={styles.layout}>
+      <section style={sx(styles.layout, isMobile, mobileStyles.layout)}>
         <div style={styles.caseList}>
           {visibleCases.map((item) => (
             <button
@@ -162,16 +164,16 @@ export default function ResponderScreen({ profile, setRole }) {
           ))}
         </div>
 
-        <article style={styles.briefing}>
-          <div style={styles.briefHeader}>
+        <article style={sx(styles.briefing, isMobile, mobileStyles.briefing)}>
+          <div style={sx(styles.briefHeader, isMobile, mobileStyles.briefHeader)}>
             <div>
               <p style={styles.caseId}>{selectedCase.id}</p>
-              <h2 style={styles.briefTitle}>{selectedCase.name}</h2>
+              <h2 style={sx(styles.briefTitle, isMobile, mobileStyles.briefTitle)}>{selectedCase.name}</h2>
             </div>
             <span style={{ ...styles.badgeLarge, ...styles[selectedCase.urgency] }}>{selectedCase.urgency}</span>
           </div>
 
-          <div style={styles.briefGrid}>
+          <div style={sx(styles.briefGrid, isMobile, mobileStyles.briefGrid)}>
             <InfoBlock title="Who this person is" items={[selectedCase.location, ...selectedCase.disabilities]} />
             <InfoBlock title="Medical dependencies" items={selectedCase.medicalDependencies} />
             <InfoBlock title="How to communicate" items={[selectedCase.communicationMethod]} />
@@ -470,5 +472,47 @@ const styles = {
     color: "#d1fae5",
     fontSize: 17,
     lineHeight: 1.55,
+  },
+}
+
+function sx(base, isMobile, mobile) {
+  return isMobile ? { ...base, ...mobile } : base
+}
+
+const mobileStyles = {
+  page: {
+    padding: "16px 14px calc(22px + env(safe-area-inset-bottom))",
+    overflowX: "hidden",
+  },
+  header: {
+    display: "grid",
+    alignItems: "start",
+    gap: 14,
+    margin: "20px 0 14px",
+  },
+  title: {
+    fontSize: "clamp(32px, 10vw, 46px)",
+    lineHeight: 1.05,
+  },
+  toolbar: {
+    gridTemplateColumns: "1fr",
+  },
+  layout: {
+    gridTemplateColumns: "1fr",
+  },
+  briefing: {
+    minHeight: "auto",
+    padding: 16,
+    borderRadius: 12,
+  },
+  briefHeader: {
+    display: "grid",
+    gap: 12,
+  },
+  briefTitle: {
+    fontSize: 30,
+  },
+  briefGrid: {
+    gridTemplateColumns: "1fr",
   },
 }

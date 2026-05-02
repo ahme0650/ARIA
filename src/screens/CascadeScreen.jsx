@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { ArrowLeft, CheckCircle2, Clock3, MessageSquare, RadioTower, XCircle } from "lucide-react"
+import useIsMobile from "../useIsMobile"
 
 const contacts = [
   {
@@ -38,6 +39,7 @@ function buildMessage(contact, profile) {
 }
 
 export default function CascadeScreen({ profile, setRole }) {
+  const isMobile = useIsMobile()
   const [activeIndex, setActiveIndex] = useState(0)
 
   useEffect(() => {
@@ -59,17 +61,17 @@ export default function CascadeScreen({ profile, setRole }) {
   )
 
   return (
-    <main style={styles.page}>
+    <main style={sx(styles.page, isMobile, mobileStyles.page)}>
       <button style={styles.backButton} onClick={() => setRole("landing")} type="button">
         <ArrowLeft size={18} />
         Role select
       </button>
 
-      <header style={styles.header}>
+      <header style={sx(styles.header, isMobile, mobileStyles.header)}>
         <div>
           <p style={styles.kicker}>Caregiver cascade</p>
-          <h1 style={styles.title}>Mission control for trusted support</h1>
-          <p style={styles.subtitle}>
+          <h1 style={sx(styles.title, isMobile, mobileStyles.title)}>Mission control for trusted support</h1>
+          <p style={sx(styles.subtitle, isMobile, mobileStyles.subtitle)}>
             ARIA activates the right person first, then escalates through community and emergency channels.
           </p>
         </div>
@@ -79,15 +81,15 @@ export default function CascadeScreen({ profile, setRole }) {
         </div>
       </header>
 
-      <section style={styles.layout}>
-        <div style={styles.cascadePanel}>
-          <div style={styles.caseStrip}>
+      <section style={sx(styles.layout, isMobile, mobileStyles.layout)}>
+        <div style={sx(styles.cascadePanel, isMobile, mobileStyles.panel)}>
+          <div style={sx(styles.caseStrip, isMobile, mobileStyles.caseStrip)}>
             <strong>{profile.name}</strong>
             <span>{profile.location}</span>
             <span style={styles.urgency}>{profile.urgency}</span>
           </div>
 
-          <div style={styles.cascadeGrid}>
+          <div style={sx(styles.cascadeGrid, isMobile, mobileStyles.cascadeGrid)}>
             {contacts.map((contact, index) => {
               const active = index <= activeIndex
               const status = index < activeIndex ? contact.baseStatus : active ? "notified" : "queued"
@@ -96,6 +98,7 @@ export default function CascadeScreen({ profile, setRole }) {
                   key={contact.key}
                   style={{
                     ...styles.contactCard,
+                    ...(isMobile ? mobileStyles.contactCard : {}),
                     opacity: active ? 1 : 0.45,
                     transform: active ? "translateY(0)" : "translateY(16px)",
                     borderColor: active ? "rgba(245, 158, 11, 0.52)" : "rgba(248, 250, 252, 0.12)",
@@ -120,7 +123,7 @@ export default function CascadeScreen({ profile, setRole }) {
           </div>
         </div>
 
-        <aside style={styles.feedPanel}>
+        <aside style={sx(styles.feedPanel, isMobile, mobileStyles.panel)}>
           <p style={styles.kicker}>Live activity feed</p>
           <h2 style={styles.feedTitle}>Status updates</h2>
           <div style={styles.feedList}>
@@ -342,5 +345,47 @@ const styles = {
     cursor: "pointer",
     fontSize: 16,
     fontWeight: 950,
+  },
+}
+
+function sx(base, isMobile, mobile) {
+  return isMobile ? { ...base, ...mobile } : base
+}
+
+const mobileStyles = {
+  page: {
+    padding: "16px 14px calc(22px + env(safe-area-inset-bottom))",
+    overflowX: "hidden",
+  },
+  header: {
+    display: "grid",
+    gap: 14,
+    margin: "20px 0",
+  },
+  title: {
+    fontSize: "clamp(32px, 10vw, 46px)",
+    lineHeight: 1.05,
+  },
+  subtitle: {
+    fontSize: 16,
+  },
+  layout: {
+    gridTemplateColumns: "1fr",
+    gap: 14,
+  },
+  panel: {
+    padding: 16,
+    borderRadius: 12,
+  },
+  caseStrip: {
+    display: "grid",
+    alignItems: "start",
+  },
+  cascadeGrid: {
+    gridTemplateColumns: "1fr",
+  },
+  contactCard: {
+    minHeight: "auto",
+    padding: 16,
   },
 }

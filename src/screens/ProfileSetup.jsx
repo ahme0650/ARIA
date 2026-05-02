@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { ArrowLeft, Save, ShieldCheck, Trash2 } from "lucide-react"
+import useIsMobile from "../useIsMobile"
 
 const storageKey = "aria-saved-citizen-profile"
 
@@ -14,6 +15,7 @@ const emptyProfile = {
 }
 
 export default function ProfileSetup({ setRole }) {
+  const isMobile = useIsMobile()
   const [profile, setProfile] = useState(() => {
     const saved = localStorage.getItem(storageKey)
     return saved ? { ...emptyProfile, ...JSON.parse(saved) } : emptyProfile
@@ -43,7 +45,7 @@ export default function ProfileSetup({ setRole }) {
   }
 
   return (
-    <main aria-label="Pre-disaster ARIA profile setup" style={styles.page}>
+    <main aria-label="Pre-disaster ARIA profile setup" style={sx(styles.page, isMobile, mobileStyles.page)}>
       <button
         aria-label="Return to ARIA role selection"
         style={styles.backButton}
@@ -54,11 +56,11 @@ export default function ProfileSetup({ setRole }) {
         Role select
       </button>
 
-      <header style={styles.header}>
+      <header style={sx(styles.header, isMobile, mobileStyles.header)}>
         <div>
           <p style={styles.kicker}>Pre-disaster registration</p>
-          <h1 style={styles.title}>Build your emergency profile before you need it</h1>
-          <p style={styles.subtitle}>
+          <h1 style={sx(styles.title, isMobile, mobileStyles.title)}>Build your emergency profile before you need it</h1>
+          <p style={sx(styles.subtitle, isMobile, mobileStyles.subtitle)}>
             Store disability, device, communication, and contact details locally on this device for
             one-tap emergency use later.
           </p>
@@ -69,8 +71,8 @@ export default function ProfileSetup({ setRole }) {
         </div>
       </header>
 
-      <form aria-describedby="profile-storage-note" onSubmit={saveProfile} style={styles.form}>
-        <section aria-label="Profile details" style={styles.panel}>
+      <form aria-describedby="profile-storage-note" onSubmit={saveProfile} style={sx(styles.form, isMobile, mobileStyles.form)}>
+        <section aria-label="Profile details" style={sx(styles.panel, isMobile, mobileStyles.panel)}>
           <LabeledInput
             label="Name"
             field="name"
@@ -103,7 +105,7 @@ export default function ProfileSetup({ setRole }) {
           />
         </section>
 
-        <section aria-label="Emergency support details" style={styles.panel}>
+        <section aria-label="Emergency support details" style={sx(styles.panel, isMobile, mobileStyles.panel)}>
           <LabeledInput
             label="Emergency contacts"
             field="emergencyContacts"
@@ -135,16 +137,16 @@ export default function ProfileSetup({ setRole }) {
           </p>
         </section>
 
-        <div style={styles.actions}>
-          <button aria-label="Save emergency profile to this device" style={styles.saveButton} type="submit">
+        <div style={sx(styles.actions, isMobile, mobileStyles.actions)}>
+          <button aria-label="Save emergency profile to this device" style={sx(styles.saveButton, isMobile, mobileStyles.actionButton)} type="submit">
             <Save aria-hidden="true" size={20} />
             Save Profile
           </button>
-          <button aria-label="Clear saved emergency profile from this device" onClick={clearProfile} style={styles.clearButton} type="button">
+          <button aria-label="Clear saved emergency profile from this device" onClick={clearProfile} style={sx(styles.clearButton, isMobile, mobileStyles.actionButton)} type="button">
             <Trash2 aria-hidden="true" size={20} />
             Clear
           </button>
-          <button aria-label="Open citizen emergency screen" onClick={() => setRole("citizen")} style={styles.useButton} type="button">
+          <button aria-label="Open citizen emergency screen" onClick={() => setRole("citizen")} style={sx(styles.useButton, isMobile, mobileStyles.actionButton)} type="button">
             Use in emergency
           </button>
         </div>
@@ -335,5 +337,46 @@ const styles = {
     margin: 0,
     color: "#bae6fd",
     fontWeight: 900,
+  },
+}
+
+function sx(base, isMobile, mobile) {
+  return isMobile ? { ...base, ...mobile } : base
+}
+
+const mobileStyles = {
+  page: {
+    padding: "16px 14px calc(22px + env(safe-area-inset-bottom))",
+    overflowX: "hidden",
+  },
+  header: {
+    display: "grid",
+    gap: 14,
+    margin: "20px 0",
+  },
+  title: {
+    fontSize: "clamp(32px, 10vw, 46px)",
+    lineHeight: 1.05,
+  },
+  subtitle: {
+    fontSize: 16,
+  },
+  form: {
+    gridTemplateColumns: "1fr",
+    gap: 14,
+  },
+  panel: {
+    padding: 16,
+    borderRadius: 12,
+  },
+  actions: {
+    display: "grid",
+    gridTemplateColumns: "1fr",
+  },
+  actionButton: {
+    width: "100%",
+    justifyContent: "center",
+    textAlign: "center",
+    whiteSpace: "normal",
   },
 }
