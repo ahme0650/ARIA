@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">ARIA app icon placeholder</title>
+  <rect width="512" height="512" rx="108" fill="#0a0a0f"/>
+  <circle cx="256" cy="256" r="184" fill="#e74c3c"/>
+  <path d="M256 112 396 368H116L256 112Z" fill="#ffffff"/>
+  <path d="M256 184 330 320H182L256 184Z" fill="#0a0a0f"/>
+  <rect x="232" y="314" width="48" height="64" rx="12" fill="#ffffff"/>
+</svg>
