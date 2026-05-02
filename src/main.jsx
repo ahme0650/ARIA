@@ -13,7 +13,8 @@ root.render(
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      const registration = await navigator.serviceWorker.register('/sw.js')
+      const baseUrl = import.meta.env.BASE_URL
+      const registration = await navigator.serviceWorker.register(`${baseUrl}sw.js`)
 
       await navigator.serviceWorker.ready
 
@@ -24,7 +25,7 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 
       registration.active?.postMessage({
         type: 'CACHE_URLS',
-        urls: ['/', '/index.html', ...sameOriginResources],
+        urls: [baseUrl, `${baseUrl}index.html`, ...sameOriginResources],
       })
     } catch (error) {
       console.warn('ARIA offline support could not be enabled.', error)

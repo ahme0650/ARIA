@@ -1,13 +1,15 @@
 const CACHE_NAME = 'aria-pwa-v1'
-const CORE_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/favicon.svg',
-  '/icons.svg',
-  '/icon-192.png',
-  '/icon-512.png',
+const SCOPE_PATH = new URL(self.registration.scope).pathname
+const CORE_ASSET_PATHS = [
+  '',
+  'index.html',
+  'manifest.json',
+  'favicon.svg',
+  'icons.svg',
+  'icon-192.png',
+  'icon-512.png',
 ]
+const CORE_ASSETS = CORE_ASSET_PATHS.map((path) => `${SCOPE_PATH}${path}`)
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -61,10 +63,10 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .then((response) => {
           const copy = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy))
+          caches.open(CACHE_NAME).then((cache) => cache.put(`${SCOPE_PATH}index.html`, copy))
           return response
         })
-        .catch(() => caches.match('/index.html')),
+        .catch(() => caches.match(`${SCOPE_PATH}index.html`)),
     )
     return
   }
